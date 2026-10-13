@@ -7,6 +7,12 @@ from app.actions.desktop_controller import (
     DesktopActionError,
     DesktopController,
 )
+
+from app.vision.screen_observer import (
+    ScreenObservationError,
+    ScreenObserver,
+)
+
 from app.config import load_settings
 from app.logging_config import configure_logging
 from app.voice.speech_input import SpeechInput, SpeechInputError
@@ -15,6 +21,8 @@ from app.voice.speech_input import SpeechInput, SpeechInputError
 def main(
     listen: bool = False,
     launch: str | None = None,
+    inspect_windows: bool = False,
+    capture_screen: bool = False,
 ) -> None:
     """Initialize the app and run one explicitly requested operation."""
     settings = load_settings()
@@ -27,6 +35,44 @@ def main(
     logger = logging.getLogger(__name__)
     logger.info("Application initialization started")
     logger.info("%s initialized successfully", settings.app_name)
+
+    observer = ScreenObserver()
+
+    if inspect_windows:
+        try:
+            windows = observer.list_visible_windows()
+
+            if not windows:
+                print("No visible titled windows found.")
+
+            for window in windows:
+                print(
+                    f"Window: {window.title!r} | "
+                    f"PID: {window.process_id} | "
+                    f"Bounds: ({window.left}, {window.top}, "
+                    f"{window.right}, {window.bottom})"
+                )
+
+        except ScreenObservationError as exc:
+            logger.warning("Window observation failed: %s", exc)
+            print(f"Screen observation error: {exc}")
+
+        return
+
+    if capture_screen:
+        try:
+            screenshot = observer.capture_screenshot()
+            print(
+                "Screenshot captured in memory: "
+                f"{screenshot.width} x {screenshot.height}"
+            )
+            del screenshot
+
+        except ScreenObservationError as exc:
+            logger.warning("Screenshot capture failed: %s", exc)
+            print(f"Screen observation error: {exc}")
+
+        return
 
     if launch is not None:
         try:
@@ -66,11 +112,25 @@ if __name__ == "__main__":
         metavar="APP",
         help="Launch an approved application, such as notepad.",
     )
+    operation.add_argument(
+        "--inspect-windows",
+        action="store_true",
+        help="List visible titled desktop windows.",
+    )
+    operation.add_argument(
+        "--capture-screen",
+        action="store_true",
+        help="Capture a screenshot in memory and report its dimensions.",
+    )
 
     args = parser.parse_args()
 
     try:
-        main(listen=args.listen, launch=args.launch)
+        main(listen=args.listen,
+             launch=args.launch,
+             inspect_windows=args.inspect_windows,
+             capture_screen=args.capture_screen
+             )
     except (ValueError, OSError) as exc:
         logging.basicConfig(level=logging.ERROR)
         logging.getLogger(__name__).error(
