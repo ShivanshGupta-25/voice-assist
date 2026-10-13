@@ -1,3 +1,4 @@
 ﻿pytest>=8.0,<10.0
 SpeechRecognition>=3.14,<4 
 PyAudio>=0.2.14,<1
+PyAutoGUI>=0.9.54,<1
