@@ -152,9 +152,9 @@ class OCRReader:
                 "Tesseract executable was not found during OCR."
             ) from exc
         except Exception as exc:
-            logger.exception("Tesseract OCR execution failed")
+            logger.exception("OCR failed during execution")
             raise OCRReaderError(
-                f"OCR execution failed: {exc}"
+                f"OCR failed during execution: {exc}"
             ) from exc
 
         regions: list[TextRegion] = []

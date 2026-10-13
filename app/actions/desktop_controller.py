@@ -6,6 +6,7 @@ from typing import Final
 
 import pyautogui
 
+from app.actions.action_registry import ALLOWED_APPS
 
 class DesktopActionError(Exception):
     """Raised when a desktop action is invalid or fails."""
@@ -15,12 +16,13 @@ class DesktopController:
     """Execute explicitly requested, allowlisted desktop actions."""
 
     # Only these applications may be launched through this controller.
-    ALLOWED_APPS: Final[dict[str, str]] = {
-        "notepad": "notepad.exe",
-        "calculator": "calc.exe",
-        "paint": "mspaint.exe",
-        "whatsapp": "whatsapp:",
-    }
+    # ALLOWED_APPS: Final[dict[str, str]] = {
+    #     "notepad": "notepad.exe",
+    #     "calculator": "calc.exe",
+    #     "paint": "mspaint.exe",
+    #     "whatsapp": "whatsapp:",
+    # }
+    ALLOWED_APPS = ALLOWED_APPS
 
     # Limit the keys accepted by the basic keyboard interface.
     ALLOWED_KEYS: Final[frozenset[str]] = frozenset({

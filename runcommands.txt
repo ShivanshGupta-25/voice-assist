@@ -1,0 +1,20 @@
+python -m app.main
+
+python -m pytest -q
+
+python -m app.main --listen
+
+python -m app.main --launch notepad
+
+python -m app.main --inspect-windows
+
+python -m app.main --capture-screen
+
+python -m app.main --read-screen-text
+
+
+python -m app.main --execute "Open Notepad"
+python -m app.main --execute "Open WhatsApp"
+python -m app.main --execute "Open calculator"
+python -m app.main --execute "Delete all files"
+python -m app.main --execute "Cancel"
