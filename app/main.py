@@ -16,6 +16,7 @@ from app.vision.screen_observer import (
 from app.config import load_settings
 from app.logging_config import configure_logging
 from app.voice.speech_input import SpeechInput, SpeechInputError
+from app.vision.ocr_reader import OCRReader, OCRReaderError
 
 
 def main(
@@ -23,6 +24,7 @@ def main(
     launch: str | None = None,
     inspect_windows: bool = False,
     capture_screen: bool = False,
+    read_screen_text: bool = False,
 ) -> None:
     """Initialize the app and run one explicitly requested operation."""
     settings = load_settings()
@@ -74,6 +76,29 @@ def main(
 
         return
 
+    if read_screen_text:
+        try:
+            screenshot = observer.capture_screenshot()
+            regions = OCRReader().read_text(screenshot)
+            del screenshot
+
+            if not regions:
+                print("No readable text detected.")
+
+            for region in regions:
+                print(
+                    f"Text: {region.text!r} | "
+                    f"Confidence: {region.confidence:.1f}% | "
+                    f"Bounds: ({region.left}, {region.top}, "
+                    f"{region.width}, {region.height})"
+                )
+
+        except (ScreenObservationError, OCRReaderError) as exc:
+            logger.warning("Screen text recognition failed: %s", exc)
+            print(f"Screen text recognition error: {exc}")
+
+        return
+
     if launch is not None:
         try:
             app_name = DesktopController().launch_app(launch)
@@ -122,6 +147,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Capture a screenshot in memory and report its dimensions.",
     )
+    operation.add_argument(
+        "--read-screen-text",
+        action="store_true",
+        help="Capture the screen and recognize visible text using OCR.",
+    )
 
     args = parser.parse_args()
 
@@ -129,7 +159,8 @@ if __name__ == "__main__":
         main(listen=args.listen,
              launch=args.launch,
              inspect_windows=args.inspect_windows,
-             capture_screen=args.capture_screen
+             capture_screen=args.capture_screen,
+             read_screen_text=args.read_screen_text,
              )
     except (ValueError, OSError) as exc:
         logging.basicConfig(level=logging.ERROR)
