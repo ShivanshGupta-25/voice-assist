@@ -1,3 +1,4 @@
+
 """Build safe, structured plans from parsed intents."""
 
 from dataclasses import dataclass
@@ -39,8 +40,8 @@ class TaskPlanner:
 
         if intent.kind == IntentType.UNKNOWN:
             raise PlanningError(
-                "Command not understood. Try 'Open Notepad' "
-                "or another supported application."
+                "Command not understood. Try 'Open Notepad' or "
+                "'Open WhatsApp and open Sweta Koshta's chat'."
             )
 
         if intent.kind == IntentType.LAUNCH_APP:
@@ -62,7 +63,29 @@ class TaskPlanner:
                 )
             )
 
-        # Fail closed if a future intent type is added without a plan.
+        if intent.kind == IntentType.OPEN_WHATSAPP_CHAT:
+            contact = (intent.target or "").strip()
+
+            if not contact:
+                raise PlanningError(
+                    "A contact name is required to open a WhatsApp chat."
+                )
+
+            if "whatsapp" not in ALLOWED_APPS:
+                raise PlanningError(
+                    "WhatsApp is not in the allowed applications list."
+                )
+
+            return TaskPlan(
+                actions=(
+                    PlannedAction(
+                        action="open_whatsapp_chat",
+                        target=contact,
+                    ),
+                )
+            )
+
+        # Fail closed if a future intent type has no planning rule.
         raise PlanningError(
             f"No planning rule exists for intent: {intent.kind}"
         )

@@ -150,3 +150,27 @@ class DesktopController:
             raise DesktopActionError(
                 f"Could not click at ({x}, {y})."
             ) from exc
+
+    
+    def press_shortcut(self, shortcut: str) -> None:
+        """Execute an explicitly approved keyboard shortcut."""
+        normalized = shortcut.strip().lower()
+
+        allowed_shortcuts = {
+            "ctrl+a": ("ctrl", "a"),
+        }
+
+        keys = allowed_shortcuts.get(normalized)
+        if keys is None:
+            raise DesktopActionError(
+                f"Shortcut '{normalized}' is not allowed."
+            )
+
+        try:
+            pyautogui.hotkey(*keys)
+        except pyautogui.FailSafeException:
+            raise
+        except Exception as exc:
+            raise DesktopActionError(
+                f"Could not execute shortcut '{normalized}'."
+            ) from exc

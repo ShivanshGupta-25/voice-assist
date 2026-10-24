@@ -203,3 +203,80 @@ class ScreenObserver:
             raise ScreenObservationError(
                 "Could not capture the desktop screenshot."
             ) from exc
+
+    
+    
+    def activate_window(self, window_title: str) -> None:
+        """Bring one uniquely identified application window to the foreground."""
+        if not isinstance(window_title, str) or not window_title.strip():
+            raise ValueError("A window title is required.")
+
+        expected_title = window_title.strip().casefold()
+
+        try:
+            desktop = Desktop(backend="uia")
+            matches = [
+                window
+                for window in desktop.windows()
+                if window.is_visible()
+                and window.window_text().strip().casefold() == expected_title
+            ]
+
+            if len(matches) != 1:
+                raise ScreenObservationError(
+                    f"Expected one visible window titled '{window_title}', "
+                    f"but found {len(matches)}."
+                )
+
+            # Request foreground activation using pywinauto.
+            matches[0].set_focus()
+
+        except ScreenObservationError:
+            raise
+        except Exception as exc:
+            raise ScreenObservationError(
+                f"Could not activate window '{window_title}'."
+            ) from exc
+
+
+    def capture_window_screenshot(self, window_title: str) -> Image.Image:
+        """Capture only the bounds of a uniquely identified active window."""
+        self.activate_window(window_title)
+
+        try:
+            desktop = Desktop(backend="uia")
+            matches = [
+                window
+                for window in desktop.windows()
+                if window.is_visible()
+                and window.window_text().strip().casefold()
+                == window_title.strip().casefold()
+            ]
+
+            if len(matches) != 1:
+                raise ScreenObservationError(
+                    f"Could not uniquely identify window '{window_title}'."
+                )
+
+            rect = matches[0].rectangle()
+            screen = pyautogui.screenshot()
+            screen_width, screen_height = screen.size
+
+            left = max(0, rect.left)
+            top = max(0, rect.top)
+            right = min(screen_width, rect.right)
+            bottom = min(screen_height, rect.bottom)
+
+            if right <= left or bottom <= top:
+                raise ScreenObservationError(
+                    f"Window '{window_title}' has invalid screen bounds."
+                )
+
+            return screen.crop((left, top, right, bottom))
+
+        except ScreenObservationError:
+            raise
+        except Exception as exc:
+            raise ScreenObservationError(
+                f"Could not capture window '{window_title}'."
+            ) from exc

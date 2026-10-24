@@ -1,3 +1,4 @@
+
 """Convert normalized commands into structured intents."""
 
 import re
@@ -11,6 +12,7 @@ class IntentType(str, Enum):
     """Supported high-level command intents."""
 
     LAUNCH_APP = "launch_app"
+    OPEN_WHATSAPP_CHAT = "open_whatsapp_chat"
     STOP = "stop"
     UNKNOWN = "unknown"
 
@@ -32,6 +34,12 @@ class IntentParser:
         r"(?P<target>[\w][\w -]*?)[.!?]*$"
     )
 
+    _WHATSAPP_CHAT_PATTERN = re.compile(
+        r"^(?:please\s+)?open\s+whatsapp\s+and\s+"
+        r"(?:open|show)\s+"
+        r"(?P<contact>.+?)\s+chat[.!?]*$"
+    )
+
     _STOP_COMMANDS = {
         "stop",
         "cancel",
@@ -42,6 +50,12 @@ class IntentParser:
 
     def parse(self, command: str) -> Intent:
         """Parse a command without executing any action."""
+        if not isinstance(command, str):
+            return Intent(
+                kind=IntentType.UNKNOWN,
+                raw_command="",
+            )
+
         normalized = normalize_command(command)
 
         if not normalized:
@@ -56,12 +70,34 @@ class IntentParser:
                 raw_command=command,
             )
 
+        # Match a request to open a specific WhatsApp contact.
+        chat_match = self._WHATSAPP_CHAT_PATTERN.fullmatch(normalized)
+
+        if chat_match:
+            contact = chat_match.group("contact").strip()
+
+            # Remove a possessive suffix, e.g. "Sweta Koshta's chat".
+            if contact.endswith(("'s", "’s")):
+                contact = contact[:-2].strip()
+
+            if contact:
+                return Intent(
+                    kind=IntentType.OPEN_WHATSAPP_CHAT,
+                    raw_command=command,
+                    target=contact,
+                )
+
+            return Intent(
+                kind=IntentType.UNKNOWN,
+                raw_command=command,
+            )
+
+        # Preserve existing application-launch behavior.
         match = self._LAUNCH_PATTERN.fullmatch(normalized)
 
         if match:
             target = match.group("target").strip()
 
-            # Remove a leading article without guessing the application.
             if target.startswith("the "):
                 target = target[4:].strip()
 

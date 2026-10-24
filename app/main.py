@@ -21,8 +21,7 @@ from app.vision.ocr_reader import OCRReader, OCRReaderError
 from app.agent.intent_parser import IntentParser
 from app.agent.task_planner import PlanningError, TaskPlanner
 
-from app.agent.task_executor import TaskExecutor
-
+from app.agent.task_executor import TaskExecutor, TaskExecutionError
 
 def main(
     listen: bool = False,
